@@ -62,38 +62,16 @@
       color: black;
     }
 
+    button:disabled {
+      opacity: 0.5;
+    }
+
     .listening {
       color: #00e5ff;
     }
   </style>
 </head>
-<script>
-async function askMimi(message) {
-    try {
-        const response = await fetch("http://localhost:3000/api/chat", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                message: message
-            })
-        });
 
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.error || "MIMI AI Core error");
-        }
-
-        return data.reply;
-
-    } catch (error) {
-        console.error("MIMI CORE ERROR:", error);
-        return "MIMI chưa kết nối được AI Core.";
-    }
-}
-</script>
 <body>
 
   <div class="mimi">
@@ -109,103 +87,320 @@ async function askMimi(message) {
       Mình là MIMI.
     </div>
 
-    <button id="talkButton" onclick="startListening()">
+    <button id="talkButton">
       🎙️ TALK TO MIMI
     </button>
 
   </div>
 
-  <script>
+<script>
 
-    const screen = document.getElementById("screen");
-    const status = document.getElementById("status");
-    const talkButton = document.getElementById("talkButton");
+const AI_CORE_URL =
+  "https://mimi-ai-core.tindhdt7.workers.dev/";
 
-    const SpeechRecognition =
-      window.SpeechRecognition ||
-      window.webkitSpeechRecognition;
+const screen = document.getElementById("screen");
+const status = document.getElementById("status");
+const talkButton = document.getElementById("talkButton");
 
-    let recognition;
+const SpeechRecognition =
+  window.SpeechRecognition ||
+  window.webkitSpeechRecognition;
 
-    if (SpeechRecognition) {
+let recognition = null;
 
-      recognition = new SpeechRecognition();
 
-      recognition.lang = "vi-VN";
-      recognition.continuous = false;
-      recognition.interimResults = false;
+/* =========================
+   AI CORE
+========================= */
 
-      recognition.onstart = function() {
+async function askMimi(message) {
 
-        status.innerHTML = "🎧 MIMI ĐANG NGHE";
+  status.innerHTML = "🤖 MIMI ĐANG SUY NGHĨ";
 
-        status.classList.add("listening");
+  try {
 
-        screen.innerHTML =
-          "MIMI đang lắng nghe...<br>🎙️";
+    const response = await fetch(AI_CORE_URL, {
+      method: "POST",
 
-        talkButton.innerHTML =
-          "🔴 ĐANG NGHE";
-      };
+      headers: {
+        "Content-Type": "application/json"
+      },
 
-      recognition.onresult = function(event) {
+      body: JSON.stringify({
+        message: message
+      })
+    });
 
-        const text =
-          event.results[0][0].transcript;
+    const data = await response.json();
 
-        screen.innerHTML =
-          "<b>Cậu:</b><br>" + text;
+    console.log("MIMI AI CORE:", data);
 
-        status.innerHTML =
-          "AI CORE • ĐÃ NHẬN GIỌNG NÓI";
+    if (!response.ok) {
+      throw new Error(
+        data.error || "AI Core error"
+      );
+    }
+
+    const reply =
+      data.reply ||
+      data.response ||
+      data.message ||
+      "MIMI chưa có câu trả lời.";
+
+    screen.innerHTML =
+      "<b>MIMI:</b><br>" +
+      escapeHtml(reply);
+
+    status.innerHTML =
+      "AI CORE • ONLINE";
+
+    speakMimi(reply);
+
+  } catch (error) {
+
+    console.error("MIMI CORE ERROR:", error);
+
+    screen.innerHTML =
+      "MIMI không kết nối được AI Core.<br><br>" +
+error.message;
+
+    status.innerHTML =
+      "AI CORE • ERROR";
+  }
+}
+
+
+/* =========================
+   TEXT TO SPEECH
+========================= */
+
+function speakMimi(text) {
+
+  if (!("speechSynthesis" in window)) {
+
+    console.log(
+      "Thiết bị không hỗ trợ Speech Synthesis."
+    );
+
+    return;
+  }
+
+  window.speechSynthesis.cancel();
+
+  const utterance =
+    new SpeechSynthesisUtterance(text);
+
+  utterance.lang = "vi-VN";
+  utterance.rate = 1.0;
+  utterance.pitch = 1.0;
+  utterance.volume = 1.0;
+
+  utterance.onstart = function() {
+
+    status.innerHTML =
+      "🔊 MIMI ĐANG NÓI";
+  };
+
+  utterance.onend = function() {
+
+    status.innerHTML =
+      "AI CORE • ONLINE";
+  };
+
+  utterance.onerror = function(event) {
+
+    console.error(
+      "TTS ERROR:",
+      event
+    );
+
+    status.innerHTML =
+      "🔊 TTS • ERROR";
+  };
+
+  window.speechSynthesis.speak(
+    utterance
+  );
+}
+
+
+/* =========================
+   SPEECH RECOGNITION
+========================= */
+
+if (SpeechRecognition) {
+
+  recognition =
+    new SpeechRecognition();
+
+  recognition.lang =
+    "vi-VN";
+
+  recognition.continuous =
+    false;
+
+  recognition.interimResults =
+    false;
+
+
+  recognition.onstart = function() {
+
+    status.innerHTML =
+      "🎧 MIMI ĐANG NGHE";
+
+    status.classList.add(
+      "listening"
+    );
+
+    screen.innerHTML =
+      "MIMI đang lắng nghe...<br>🎙️";
+
+    talkButton.innerHTML =
+      "🔴 ĐANG NGHE";
+  };
+
+
+  recognition.onresult = function(event) {
+
+    const text =
+      event.results[0][0].transcript;
+
+    console.log(
+      "USER:",
+      text
+    );
+
+    screen.innerHTML =
+      "<b>Cậu:</b><br>" +
+      escapeHtml(text);
+
+    status.innerHTML =
+      "AI CORE • ĐANG XỬ LÝ";
+
+    talkButton.innerHTML =
+      "🤖 MIMI ĐANG XỬ LÝ";
+
+    talkButton.disabled =
+      true;
+
+    askMimi(text).finally(() => {
+
+      talkButton.disabled =
+        false;
+
+      talkButton.innerHTML =
+        "🎙️ TALK TO MIMI";
+    });
+  };
+
+
+  recognition.onerror =
+    function(event) {
+
+      console.error(
+        "MIC ERROR:",
+        event.error
+      );
+
+      screen.innerHTML =
+        "MIMI không nghe được.<br><br>" +
+        "Lỗi: " +
+        event.error;
+
+      status.innerHTML =
+        "MICROPHONE • ERROR";
+
+      talkButton.innerHTML =
+        "🎙️ THỬ LẠI";
+    };
+
+
+  recognition.onend =
+    function() {
+
+      status.classList.remove(
+        "listening"
+      );
+
+      if (
+        !talkButton.disabled
+      ) {
 
         talkButton.innerHTML =
           "🎙️ TALK TO MIMI";
-      };
+      }
+    };
 
-      recognition.onerror = function(event) {
+} else {
 
-        screen.innerHTML =
-          "MIMI không nghe được.<br><br>" +
-          "Lỗi: " + event.error;
+  screen.innerHTML =
+    "Trình duyệt này chưa hỗ trợ " +
+    "Speech Recognition.";
 
-        status.innerHTML =
-          "MICROPHONE • ERROR";
+  status.innerHTML =
+    "MICROPHONE • NOT SUPPORTED";
 
-        talkButton.innerHTML =
-
-"🎙️ THỬ LẠI";
-      };
-
-      recognition.onend = function() {
-
-        status.classList.remove("listening");
-
-        talkButton.innerHTML =
-          "🎙️ TALK TO MIMI";
-      };
-
-    } else {
-
-      screen.innerHTML =
-        "Trình duyệt này chưa hỗ trợ<br>" +
-        "Speech Recognition.";
-
-      talkButton.disabled = true;
-    }
+  talkButton.disabled =
+    true;
+}
 
 
-    function startListening() {
+/* =========================
+   START LISTENING
+========================= */
 
-      if (!recognition) return;
+function startListening() {
 
-      screen.innerHTML =
-        "MIMI chuẩn bị nghe...";
+  if (!recognition) {
 
-      recognition.start();
-    }
+    alert(
+"Thiết bị chưa hỗ trợ Speech Recognition."
+    );
 
-  </script>
+    return;
+  }
+
+  try {
+
+    screen.innerHTML =
+      "MIMI chuẩn bị nghe...";
+
+    recognition.start();
+
+  } catch (error) {
+
+    console.error(
+      "START MIC ERROR:",
+      error
+    );
+  }
+}
+
+
+talkButton.addEventListener(
+  "click",
+  startListening
+);
+
+
+/* =========================
+   SAFE HTML
+========================= */
+
+function escapeHtml(text) {
+
+  const div =
+    document.createElement("div");
+
+  div.textContent =
+    text;
+
+  return div.innerHTML;
+}
+
+</script>
 
 </body>
 </html>
+      
+      
