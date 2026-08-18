@@ -67,7 +67,33 @@
     }
   </style>
 </head>
+<script>
+async function askMimi(message) {
+    try {
+        const response = await fetch("http://localhost:3000/api/chat", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                message: message
+            })
+        });
 
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || "MIMI AI Core error");
+        }
+
+        return data.reply;
+
+    } catch (error) {
+        console.error("MIMI CORE ERROR:", error);
+        return "MIMI chưa kết nối được AI Core.";
+    }
+}
+</script>
 <body>
 
   <div class="mimi">
