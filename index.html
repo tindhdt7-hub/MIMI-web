@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MIMI</title>
+
+  <style>
+    body {
+      margin: 0;
+      background: #05070d;
+      color: white;
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .mimi {
+      width: 90%;
+      max-width: 500px;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 48px;
+      margin-bottom: 10px;
+      letter-spacing: 8px;
+    }
+
+    .status {
+      color: #00e5ff;
+      margin-bottom: 30px;
+    }
+
+    .screen {
+      border: 1px solid #00e5ff;
+      border-radius: 20px;
+      padding: 30px;
+      min-height: 180px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 0 25px rgba(0,229,255,0.2);
+    }
+
+    button {
+      margin-top: 25px;
+      padding: 15px 30px;
+      border: 1px solid #00e5ff;
+      border-radius: 30px;
+      background: transparent;
+      color: white;
+      font-size: 18px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #00e5ff;
+      color: black;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="mimi">
+
+    <h1>MIMI</h1>
+
+    <div class="status">
+      AI CORE • ONLINE
+    </div>
+
+    <div class="screen" id="screen">
+      Xin chào 👋<br>
+      Mình là MIMI.
+    </div>
+
+    <button onclick="talk()">
+      🎙️ TALK TO MIMI
+    </button>
+
+  </div>
+
+  <script>
+    function talk() {
+      document.getElementById("screen").innerHTML =
+        "MIMI đang lắng nghe... 🎧";
+    }
+  </script>
+
+</body>
+</html>
